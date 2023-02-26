@@ -5,8 +5,6 @@ screenh = 500
 screenw = 500
 
 
-#fff
-
 win = pygame.display.set_mode((screenw,screenh))
 pygame.display.set_caption("first game")
 p1x = 50
