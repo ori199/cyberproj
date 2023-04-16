@@ -1,132 +1,110 @@
 import pygame
+import socket
+import pickle
 
+# initialize pygame
 pygame.init()
-screenh = 500
-screenw = 500
 
+# set up the screen
+WIDTH, HEIGHT = 640, 480
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Stickman Game")
 
-win = pygame.display.set_mode((screenw,screenh))
-pygame.display.set_caption("first game")
-p1x = 50
-p1y = 50
-p2x = 150
-p2y = 50
+# set up the clock
+clock = pygame.time.Clock()
 
-width = 40
-height = 60
-vel = 5
+# set up the network
+HOST = 'localhost'
+PORT = 8888
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server_socket.bind((HOST, PORT))
+server_socket.listen(2)
+print("Waiting for connection...")
 
-run = True
-radios = 20
-colorblue=(0,191,255)
-bullet_img = pygame.image.load("bullet.png")
-bulletx = 0
-bullety = 0
+# define colors
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
 
+# define game objects
+class Stickman:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.width = 50
+        self.height = 100
+        self.color = WHITE
+        self.speed = 5
 
-def bulletshot(x,y,way):
-    if way == 'right':
-        x += vel
-    elif way == 'left':
-        x -= vel
-    elif way == 'down':
-        y += vel
-    elif way == 'up':
-        y -= vel
-    win.blit(bullet_img , (30, 30))
-    pygame.display.flip()
+    def move_left(self):
+        self.x -= self.speed
 
+    def move_right(self):
+        self.x += self.speed
 
-def player(x,y):
-    pygame.draw.circle(win,colorblue,(x+radios,y+radios),radios,int(radios/4))
-    pygame.draw.line(win,colorblue,(x+radios-int(radios/10),y+2*radios),(x+radios-int(radios/10),y+6*radios),int(radios/4))
-    #hands
-    pygame.draw.line(win,colorblue,(x+radios-int(radios/10),y+2*radios),((x+radios-int(radios/10))-radios,y+4*radios),int(radios/4))
-    pygame.draw.line(win, colorblue, (x + radios - int(radios / 10), y + 2 * radios),((x + radios - int(radios / 10)) + radios, y + 4 * radios), int(radios / 4))
-    #legs
-    pygame.draw.line(win, colorblue, (x + radios - int(radios / 10), y + 6 * radios), ((x + radios - int(radios / 10)) - radios, y + 8 * radios), int(radios / 4))
-    pygame.draw.line(win, colorblue, (x + radios - int(radios / 10), y + 6 * radios),((x + radios - int(radios / 10)) + radios, y + 8 * radios), int(radios / 4))
-colorred = (255,0,0)
-def enemy(x,y):
-    pygame.draw.circle(win,colorred,(x+radios,y+radios),radios,int(radios/4))
-    pygame.draw.line(win,colorred,(x+radios-int(radios/10),y+2*radios),(x+radios-int(radios/10),y+6*radios),int(radios/4))
-    #hands
-    pygame.draw.line(win,colorred,(x+radios-int(radios/10),y+2*radios),((x+radios-int(radios/10))-radios,y+4*radios),int(radios/4))
-    pygame.draw.line(win, colorred, (x + radios - int(radios / 10), y + 2 * radios),((x + radios - int(radios / 10)) + radios, y + 4 * radios), int(radios / 4))
-    #legs
-    pygame.draw.line(win, colorred, (x + radios - int(radios / 10), y + 6 * radios), ((x + radios - int(radios / 10)) - radios, y + 8 * radios), int(radios / 4))
-    pygame.draw.line(win, colorred, (x + radios - int(radios / 10), y + 6 * radios),((x + radios - int(radios / 10)) + radios, y + 8 * radios), int(radios / 4))
-def castle(x,y):
-    pygame.draw.rect(win, (0, 0, 255),
-                     [x, y, radios*4, radios*5], 2)
+    def draw(self):
+        pygame.draw.rect(screen, self.color, (self.x, self.y, self.width, self.height))
 
-gun_color = pygame.Color("gray")
+    def get_rect(self):
+        return pygame.Rect(self.x, self.y, self.width, self.height)
 
+class Projectile:
+    def __init__(self, x, y, direction):
+        self.x = x
+        self.y = y
+        self.width = 10
+        self.height = 10
+        self.color = RED
+        self.speed = 10
+        self.direction = direction
 
-def draw_gun(x, y):
-    # Draw the gun handle
-    pygame.draw.rect(win, gun_color, (x - 20, y + 20, 40, 10))
-    pygame.draw.rect(win, gun_color, (x - 15, y + 30, 30, 10))
+    def move(self):
+        if self.direction == "left":
+            self.x -= self.speed
+        elif self.direction == "right":
+            self.x += self.speed
 
-    # Draw the gun barrel
-    barrel_start = (x, y)
-    barrel_end = (x, y - 40)
-    barrel_width = 10
-    pygame.draw.line(win, gun_color, barrel_start, barrel_end, barrel_width)
-    pygame.draw.circle(win, gun_color, (x, y - 40), int(barrel_width / 2))
+    def draw(self):
+        pygame.draw.rect(screen, self.color, (self.x, self.y, self.width, self.height))
 
-    # Draw the gun sight
-    sight_radius = 5
-    sight_center = (x, y - 20)
-    pygame.draw.circle(win, pygame.Color("red"), sight_center, sight_radius)
-    castle(250, 80)
-    win.fill((0, 0, 0))
-    player(80, 80)
-    enemy(180, 80)
-    draw_gun(300, 250)
-p1shot = False
-while run:
-    pygame.time.delay(100)
+    def get_rect(self):
+        return pygame.Rect(self.x, self.y, self.width, self.height)
+
+# create the stickmen
+stickman1 = Stickman(100, 100)
+stickman2 = Stickman(400, 100)
+
+# create a list for the projectiles
+projectiles = []
+
+# define a function for sending and receiving data over the network
+def send_data(data):
+    conn1.send(pickle.dumps(data))
+    conn2.send(pickle.dumps(data))
+
+def receive_data():
+    data1 = pickle.loads(conn1.recv(1024))
+    data2 = pickle.loads(conn2.recv(1024))
+    return data1, data2
+
+# set up the game loop
+running = True
+while running:
+    # check for events
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            run = False
-    keys = pygame.key.get_pressed()
+            running = False
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_LEFT:
+                stickman1.move_left()
+                send_data(("move", "left"))
+            elif event.key == pygame.K_RIGHT:
+                stickman1.move_right()
+                send_data(("move", "right"))
+            elif event.key == pygame.K_SPACE:
+                projectiles.append(Projectile(stickman1.x + stickman1.width/2, stickman1.y + stickman1.height/2, "right"))
+                send_data(("shoot", "right"))
 
-#p1
-    if keys[pygame.K_LEFT]:
-        p1x -= vel
-    if keys[pygame.K_RIGHT]:
-        p1x += vel
-    if keys[pygame.K_UP]:
-        p1y -= vel
-    if keys[pygame.K_DOWN]:
-        p1y += vel
-#p2
-    if keys[pygame.K_a]:
-        p2x -= vel
-    if keys[pygame.K_d]:
-        p2x += vel
-    if keys[pygame.K_w]:
-        p2y -= vel
-    if keys[pygame.K_s]:
-        p2y += vel
-#shoot check
-
-    if keys[pygame.K_SPACE]:
-        bulletx = p1x + 2 * radios, p1y
-        bullety = p1y + 2 * radios
-        bulletshot(bulletx, bullety, 'r')
-        p1shot = True
-    if p1shot:
-        bulletshot(bulletx, bullety, 'r')
-    if (int(bulletx)) > (int(screenw)) or ((int(bulletx)) < 0) or int(bullety) > (int(screenh)) or (int(bullety) < 0):
-        p1shot = False
-
-    bulletshot(bulletx, bullety, 'r')
-    win.fill("black")
-    player(p1x, p1y)
-
-    enemy(p2x, p2y)
-    pygame.display.update()
-    pygame.time.delay(16)
-pygame.quit()
+    # move and draw the stickmen
+    screen.fill(BLACK)
+    stickman1

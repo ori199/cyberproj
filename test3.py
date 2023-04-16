@@ -26,7 +26,7 @@ players = []
 blue_wall = pygame.image.load('wallv3.png').convert()
 font = pygame.font.Font(None, 30)
 imp = pygame.image.load("C:\\Users\\orira\\PycharmProjects\\pythonProject2\\cyberprojgame\\spaceshipv2.png").convert()
-spaceshipup = pygame.transform.scale(imp, (50, 50))
+spaceshipup = pygame.transform.scale(imp, spaceshipsize)
 spaceshipdown = pygame.transform.rotate(spaceshipup, 180)
 spaceshipright = pygame.transform.rotate(spaceshipup, 270)
 spaceshipleft = pygame.transform.rotate(spaceshipup, 90)
@@ -86,63 +86,34 @@ def drawspcaship(x, y, facing):
         #pygame.display.flip()
 
 
-class Projectile(pygame.sprite.Sprite):
+class projectile(object):
     def __init__(self, x, y, radius, color, facing, shooter):
-        super().__init__()
         self.vel = vel * 1.5
+        self.x = x
+        self.y = y
         self.radius = radius
         self.color = color
         self.facing = facing
         self.shooter = shooter
         self.hit = False
 
-        self.image = bullet_img
-        self.rect = self.image.get_rect()
-        self.rect.center = (x, y)
+    def draw(self, win):
+        pygame.draw.circle(win, self.color, (self.x, self.y), self.radius, )
 
-    def update(self):
-        if self.facing == "up":
-            self.rect.y -= self.vel
-        elif self.facing == "down":
-            self.rect.y += self.vel
-        elif self.facing == "right":
-            self.rect.x += self.vel
-        else:
-            self.rect.x -= self.vel
 
-import pygame
-
-class Player(pygame.sprite.Sprite):
-    def __init__(self, x, y, player_num):
-        super().__init__()
-        self.player_num = player_num
-        self.image = pygame.Surface((50, 50))
-        self.image.fill((255, 0, 0)) # red color for the player sprite
-        self.rect = self.image.get_rect()
-        self.rect.x = x
-        self.rect.y = y
-        self.speed = 5
-
-    def update(self, keys_pressed):
-        if self.player_num == 1:
-            if keys_pressed[pygame.K_a]:
-                self.rect.x -= self.speed
-            if keys_pressed[pygame.K_d]:
-                self.rect.x += self.speed
-            if keys_pressed[pygame.K_w]:
-                self.rect.y -= self.speed
-            if keys_pressed[pygame.K_s]:
-                self.rect.y += self.speed
-        elif self.player_num == 2:
-            if keys_pressed[pygame.K_LEFT]:
-                self.rect.x -= self.speed
-            if keys_pressed[pygame.K_RIGHT]:
-                self.rect.x += self.speed
-            if keys_pressed[pygame.K_UP]:
-                self.rect.y -= self.speed
-            if keys_pressed[pygame.K_DOWN]:
-                self.rect.y += self.speed
-
+class player(object):
+    def __init__(self, x, y, color, number):
+        self.facing = 'right'
+        self.color = color
+        self.x = x
+        self.y = y
+        self.width = 50
+        self.height = 50
+        self.vel = 5
+        self.hp = 5
+        self.alive = True
+        self.number = number
+        self.lastshottime = time.time()
 
 
 def bulletdraw(bullet):
